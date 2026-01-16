@@ -50,7 +50,7 @@ export const viteConfig = defineConfig(({ mode }) => {
       }
     },
     preview: {
-      allowedHosts: ['obsahmed.villadesgros.gay', 'hssg4cogwo48w40o888ko8gw.49.13.227.46.sslip.io']
+      allowedHosts: ['obsahmed.villadesgros.gay', 'hssg4cogwo48w40o888ko8gw.49.13.227.46.sslip.io', 'obs.49.13.227.46.sslip.io']
     },
     build: {
       minify: 'terser',
