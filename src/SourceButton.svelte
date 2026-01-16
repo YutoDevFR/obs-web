@@ -30,13 +30,14 @@
 <style>
   button {
     border: none;
-    height: 4rem;
+    height: 2.5rem;
     text-align: center;
     width: 100%;
     cursor: pointer;
     background: #3e8ed0 no-repeat center center / cover;
     color: #fff;
     border-radius: 5px;
+    font-size: 0.85rem;
   }
   button.preview {
     background-color: #00d1b2;

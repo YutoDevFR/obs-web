@@ -33,6 +33,7 @@
   import { obs, sendCommand } from '../obs.js'
   import ProgramPreview from '../ProgramPreview.svelte'
   import SceneSwitcher from '../SceneSwitcher.svelte'
+  import SceneContentManager from '../SceneContentManager.svelte'
   import SourceSwitcher from '../SourceSwitcher.svelte'
   import ProfileSelect from '../ProfileSelect.svelte'
   import SceneCollectionSelect from '../SceneCollectionSelect.svelte'
@@ -112,6 +113,7 @@
   let address
   let password
   let scenes = []
+  let programScene = ''
   let replayError = ''
   let errorMessage = ''
   let imageFormat = 'jpg'
@@ -550,9 +552,11 @@
       {/if}
       <SceneSwitcher
         bind:scenes
+        bind:programScene
         buttonStyle={isIconMode ? 'icon' : 'text'}
         {editable}
       />
+      <SceneContentManager currentScene={programScene} />
       {#if !isSceneOnTop}
         <ProgramPreview {imageFormat} />
       {/if}
