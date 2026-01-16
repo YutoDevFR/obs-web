@@ -11,18 +11,17 @@
 
   // Types de sources audio connus dans OBS
   const AUDIO_INPUT_KINDS = [
-    'wasapi_input_capture',      // Windows audio input
-    'wasapi_output_capture',     // Windows audio output
-    'coreaudio_input_capture',   // macOS audio input
-    'coreaudio_output_capture',  // macOS audio output
-    'pulse_input_capture',       // Linux audio input
-    'pulse_output_capture',      // Linux audio output
-    'ffmpeg_source',             // Media source (peut avoir audio)
-    'vlc_source',                // VLC source
-    'browser_source'             // Browser source (peut avoir audio)
+    'wasapi_input_capture',
+    'wasapi_output_capture',
+    'coreaudio_input_capture',
+    'coreaudio_output_capture',
+    'pulse_input_capture',
+    'pulse_output_capture',
+    'ffmpeg_source',
+    'vlc_source',
+    'browser_source'
   ]
 
-  // Quand la scène courante change, charger son contenu
   $: if (currentScene) loadSceneContent(currentScene)
 
   async function loadSceneContent(sceneName) {
@@ -31,7 +30,6 @@
     const data = await sendCommand('GetSceneItemList', { sceneName })
     sceneItems = data.sceneItems || []
 
-    // Récupérer les sources audio et leur état mute
     audioInputs = []
     for (const item of sceneItems) {
       if (AUDIO_INPUT_KINDS.includes(item.inputKind)) {
@@ -56,7 +54,6 @@
     })
   }
 
-  // Event listeners pour màj temps réel
   function onVisibilityChanged(data) {
     if (data.sceneName === currentScene) {
       sceneItems = sceneItems.map(item =>
@@ -102,39 +99,43 @@
   })
 </script>
 
-{#if currentScene}
+{#if currentScene && sceneItems.length > 0}
 <div class="scene-content-manager">
-  <h3 class="title is-5">Contenu de : {currentScene}</h3>
+  <div class="section-header">
+    <span class="section-title">Sources</span>
+    <span class="scene-name">{currentScene}</span>
+  </div>
 
-  {#if sceneItems.length > 0}
-    <div class="box">
-      <h4 class="title is-6">Sources visuelles</h4>
-      <ul class="item-list">
-        {#each sceneItems as item}
-          <li class="item-row" class:disabled={!item.sceneItemEnabled}>
-            <button class="icon-btn" on:click={() => toggleVisibility(item)}>
-              <Icon path={item.sceneItemEnabled ? mdiEye : mdiEyeOff} />
-            </button>
-            <span class="item-name">{item.sourceName}</span>
-          </li>
-        {/each}
-      </ul>
-    </div>
-  {/if}
+  <div class="items-grid">
+    {#each sceneItems as item}
+      <button
+        class="item-chip"
+        class:disabled={!item.sceneItemEnabled}
+        on:click={() => toggleVisibility(item)}
+        title={item.sceneItemEnabled ? 'Cacher' : 'Afficher'}
+      >
+        <span class="icon"><Icon path={item.sceneItemEnabled ? mdiEye : mdiEyeOff} /></span>
+        <span class="item-name">{item.sourceName}</span>
+      </button>
+    {/each}
+  </div>
 
   {#if audioInputs.length > 0}
-    <div class="box">
-      <h4 class="title is-6">Sources audio</h4>
-      <ul class="item-list">
-        {#each audioInputs as input}
-          <li class="item-row" class:muted={input.muted}>
-            <button class="icon-btn" on:click={() => toggleMute(input)}>
-              <Icon path={input.muted ? mdiVolumeOff : mdiVolumeHigh} />
-            </button>
-            <span class="item-name">{input.sourceName}</span>
-          </li>
-        {/each}
-      </ul>
+    <div class="section-header audio-header">
+      <span class="section-title">Audio</span>
+    </div>
+    <div class="items-grid">
+      {#each audioInputs as input}
+        <button
+          class="item-chip audio-chip"
+          class:muted={input.muted}
+          on:click={() => toggleMute(input)}
+          title={input.muted ? 'Unmute' : 'Mute'}
+        >
+          <span class="icon"><Icon path={input.muted ? mdiVolumeOff : mdiVolumeHigh} /></span>
+          <span class="item-name">{input.sourceName}</span>
+        </button>
+      {/each}
     </div>
   {/if}
 </div>
@@ -142,45 +143,77 @@
 
 <style>
   .scene-content-manager {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 0.75rem;
   }
-  .item-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .item-row {
+  .section-header {
     display: flex;
     align-items: center;
-    padding: 0.5rem;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
-  .item-row:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+  .audio-header {
+    margin-top: 0.75rem;
   }
-  .item-row.disabled {
-    opacity: 0.5;
+  .section-title {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #666;
   }
-  .item-row.muted {
-    opacity: 0.7;
-  }
-  .icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    margin-right: 0.5rem;
-    color: #3e8ed0;
-  }
-  .icon-btn:hover {
-    color: #1d72aa;
-  }
-  .item-row.disabled .icon-btn,
-  .item-row.muted .icon-btn {
+  .scene-name {
+    font-size: 0.75rem;
     color: #999;
   }
+  .items-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .item-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: none;
+    background: #3e8ed0;
+    color: white;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    max-width: 180px;
+  }
+  .item-chip:hover {
+    filter: brightness(1.1);
+  }
+  .item-chip.disabled {
+    background: #ccc;
+    color: #666;
+  }
+  .item-chip.audio-chip {
+    background: #48c78e;
+  }
+  .item-chip.audio-chip.muted {
+    background: #ccc;
+    color: #666;
+  }
   .item-name {
-    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .icon {
+    display: flex;
+    align-items: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .icon :global(svg) {
+    width: 14px;
+    height: 14px;
   }
 </style>
