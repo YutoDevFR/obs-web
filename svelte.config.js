@@ -49,6 +49,9 @@ export const viteConfig = defineConfig(({ mode }) => {
         ].filter(Boolean)
       }
     },
+    preview: {
+      allowedHosts: ['obsahmed.villadesgros.gay']
+    },
     build: {
       minify: 'terser',
       cssMinify: 'lightningcss',
