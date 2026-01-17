@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { obs, sendCommand } from './obs.js'
   import Icon from 'mdi-svelte'
-  import { mdiEye, mdiEyeOff, mdiVolumeHigh, mdiVolumeOff } from '@mdi/js'
+  import { mdiEye, mdiEyeOff, mdiVolumeHigh, mdiVolumeOff, mdiRefresh } from '@mdi/js'
 
   export let currentScene = ''
 
@@ -21,6 +21,10 @@
     'vlc_source',
     'browser_source'
   ]
+
+  // Types de sources refreshables
+  const MEDIA_SOURCE_KINDS = ['ffmpeg_source', 'vlc_source']
+  const BROWSER_SOURCE_KINDS = ['browser_source']
 
   $: if (currentScene) loadSceneContent(currentScene)
 
@@ -52,6 +56,26 @@
       inputName: input.sourceName,
       inputMuted: !input.muted
     })
+  }
+
+  async function refreshSource(item) {
+    if (MEDIA_SOURCE_KINDS.includes(item.inputKind)) {
+      // Restart media playback
+      await sendCommand('TriggerMediaInputAction', {
+        inputName: item.sourceName,
+        mediaAction: 'OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART'
+      })
+    } else if (BROWSER_SOURCE_KINDS.includes(item.inputKind)) {
+      // Refresh browser cache
+      await sendCommand('PressInputPropertiesButton', {
+        inputName: item.sourceName,
+        propertyName: 'refreshnocache'
+      })
+    }
+  }
+
+  function isRefreshable(item) {
+    return MEDIA_SOURCE_KINDS.includes(item.inputKind) || BROWSER_SOURCE_KINDS.includes(item.inputKind)
   }
 
   function onVisibilityChanged(data) {
@@ -108,15 +132,23 @@
 
   <div class="items-grid">
     {#each sceneItems as item}
-      <button
-        class="item-chip"
-        class:disabled={!item.sceneItemEnabled}
-        on:click={() => toggleVisibility(item)}
-        title={item.sceneItemEnabled ? 'Cacher' : 'Afficher'}
-      >
-        <span class="icon"><Icon path={item.sceneItemEnabled ? mdiEye : mdiEyeOff} /></span>
-        <span class="item-name">{item.sourceName}</span>
-      </button>
+      <div class="item-row" class:has-refresh={isRefreshable(item)}>
+        <button
+          class="item-chip"
+          class:disabled={!item.sceneItemEnabled}
+          class:with-refresh={isRefreshable(item)}
+          on:click={() => toggleVisibility(item)}
+          title={item.sceneItemEnabled ? 'Cacher' : 'Afficher'}
+        >
+          <span class="icon"><Icon path={item.sceneItemEnabled ? mdiEye : mdiEyeOff} /></span>
+          <span class="item-name">{item.sourceName}</span>
+        </button>
+        {#if isRefreshable(item)}
+          <button class="refresh-btn" on:click|stopPropagation={() => refreshSource(item)} title="Rafraîchir">
+            <Icon path={mdiRefresh} />
+          </button>
+        {/if}
+      </div>
     {/each}
   </div>
 
@@ -171,6 +203,58 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
+  }
+  .item-row {
+    display: inline-flex;
+    align-items: stretch;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .item-row.has-refresh {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .item-chip.with-refresh {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .refresh-btn {
+    padding: 0 0.4rem;
+    border-radius: 0 4px 4px 0;
+    border: none;
+    background: rgba(0,0,0,0.15);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s ease;
+  }
+  .refresh-btn:hover {
+    background: rgba(0,0,0,0.25);
+  }
+  .refresh-btn:active {
+    background: rgba(0,0,0,0.35);
+  }
+  .refresh-btn :global(svg) {
+    width: 12px;
+    height: 12px;
+  }
+  .item-row.has-refresh .item-chip {
+    background: #3e8ed0;
+  }
+  .item-row.has-refresh .item-chip.disabled {
+    background: #aaa;
+  }
+  .item-row.has-refresh .refresh-btn {
+    background: #2d7fc4;
+  }
+  .item-row.has-refresh .refresh-btn:hover {
+    background: #2570b0;
+  }
+  .item-row.has-refresh .item-chip.disabled + .refresh-btn {
+    background: #999;
+  }
+  .item-row.has-refresh .item-chip.disabled + .refresh-btn:hover {
+    background: #888;
   }
   .item-chip {
     display: inline-flex;
